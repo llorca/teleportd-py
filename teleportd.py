@@ -80,7 +80,7 @@ class Teleportd():
 			endpoint:
 				The API endpoint (e.g. 'search', 'get'...)
 			args:
-				An array of search argumentss
+				An array of search arguments
 		
 		Returns:
 			The search results if everything went ok,
