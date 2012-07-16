@@ -52,11 +52,9 @@ class Teleportd():
 				An array of search arguments
 		
 		Returns:
-			The search results as a JSON object if
-			everything went ok, an error message otherwise
+			A JSON object containing the search results
 		'''
-		search = self.__request('search', args)
-		return search['hits'] if search['ok'] else search['error']
+		return self.__request('search', args)
 		
 	def get(self, sha):
 		'''Gets a picture.
@@ -66,11 +64,9 @@ class Teleportd():
 				The SHA identifier of the picture
 		
 		Returns:
-			The picture as a JSON object if
-			everything went ok, an error message otherwise
+			A JSON object describing the picture
 		'''
-		get = self.__request('get', sha)
-		return get['hits'] if get['ok'] else get['error']
+		return self.__request('get', sha)
 	
 	def __request(self, endpoint, args):
 		'''Executes a GET request to the servers with
@@ -83,10 +79,10 @@ class Teleportd():
 				An array of search arguments
 		
 		Returns:
-			The search results if everything went ok,
-			an error message otherwise
+			The JSON corresponding to the request
 		'''
 		path = '/%s?user_key=%s&%s' % (endpoint, self.key, urllib.urlencode(args))
-		data = simplejson.loads(urllib2.urlopen(self.url + path).read())
+		response = urllib2.urlopen(self.url + path).read()
+		data = simplejson.loads(response)
 		return data
 		
