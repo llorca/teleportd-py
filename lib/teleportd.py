@@ -13,7 +13,7 @@ import time
 import urllib
 import urllib2
 import urlparse
-import re
+import pycurl
 
 try:
 	# Python >= 2.6
@@ -39,10 +39,14 @@ class TeleportdError(Exception):
 
 class Teleportd():
 	'''Class wrapping the Teleportd API'''
-	def __init__(self, key, url='http://api.teleportd.com', port='80'):
+	def __init__(self, key, url='http://api.teleportd.com/%s?user_key=%s&%s', port='80'):
 		self.key = key
 		self.url = url
 		self.port = port
+		self.buffer = ''
+	
+	def stream(self, args, callback):
+		return self.__request('stream', args, callback)
 	
 	def search(self, args):
 		'''Performs a search.
@@ -68,21 +72,41 @@ class Teleportd():
 		'''
 		return self.__request('get', sha)
 	
-	def __request(self, endpoint, args):
+	def __on_receive(self, chunk, callback):
+		self.buffer += chunk
+		data = self.buffer.split('\r\n')
+		if self.buffer.endswith('\r\n'):
+			for obj in data:
+				callback(simplejson.loads(obj))
+			self.buffer = ''
+		else:
+			self.buffer = data[-1]
+			del data[-1]
+			for obj in data:
+				callback(json.loads(obj))
+	
+	def __request(self, endpoint, args, callback=None):
 		'''Executes a GET request to the servers with
 		   the provided endpoint and args
 		
 		Args:
 			endpoint:
-				The API endpoint (e.g. 'search', 'get'...)
+				The API endpoint (e.g. 'stream', 'search', 'get'...)
 			args:
 				An array of search arguments
 		
 		Returns:
 			The JSON corresponding to the request
 		'''
-		path = '/%s?user_key=%s&%s' % (endpoint, self.key, urllib.urlencode(args))
-		response = urllib2.urlopen(self.url + path).read()
-		data = simplejson.loads(response)
-		return data
-		
+		url = self.url % (endpoint, self.key, urllib.urlencode(args))
+		if endpoint is 'stream':
+			conn = pycurl.Curl()
+			conn.setopt(pycurl.VERBOSE, 1)
+			conn.setopt(pycurl.URL, url)
+			conn.setopt(pycurl.WRITEFUNCTION, lambda chunk: self.__on_receive(chunk, callback))
+			conn.perform()
+		else:
+			response = urllib2.urlopen(url).read()
+			data = simplejson.loads(response)
+			return data
+			

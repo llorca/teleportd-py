@@ -1,9 +1,14 @@
 #!/usr/bin/python
 
-from teleportd import Teleportd
+from lib.teleportd import Teleportd
 
-tl = Teleportd('f8369c8ecb7c8e28e8194070702ee58b')
+teleportd = Teleportd('2860f67a25eef82f8b6bf7a7c7711c2f')
 
-search = tl.search({'str': 'paris'})
+def callback(data):
+	print data
 
-print search
+stream = teleportd.stream({}, callback)
+search = teleportd.search({'str': 'paris'})
+get = teleportd.get({'sha': '12-07-20-98a3b3fdd9b190ef4484a06a76fc1009c03076c5'})
+
+#print search
